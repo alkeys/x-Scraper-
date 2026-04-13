@@ -34,3 +34,5 @@ Aunque actualmente el script se encarga de la descarga, la lógica de funcionami
 2.  **Procesamiento:** El script lee el archivo `url.txt`.
 3.  **Descarga:** Los archivos se guardan en el directorio local de forma automatizada.
 
+[![260413-16h57m01s-screenshot.png](https://i.postimg.cc/903d86cG/260413-16h57m01s-screenshot.png)](https://postimg.cc/LYTgh0YX)
+
