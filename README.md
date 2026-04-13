@@ -1,5 +1,5 @@
 
-# Twitter Media Downloader 🚀
+# Twitter or X Media Downloader 🚀
 
 Este script en Python permite descargar de forma masiva imágenes y videos de Twitter (X) utilizando listas de URLs directas de sus servidores de contenido (CDN).
 
