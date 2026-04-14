@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>X Media URL Extractor</title>
+    <title>ext-x-v2</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <main class="contenedor">
       <div class="logo" aria-hidden="true">A</div>
-      <h1>X Media URL Extractor</h1>
-      <p class="nota">Abre x.com, navega perfil, baja scroll. Extension captura URLs cargadas.</p>
+      <h1>ext-x-v2</h1>
+      <p class="nota">Captura en X y descarga media en un click.</p>
 
       <section class="tarjeta">
         <div class="fila"><span>Imagenes</span><strong id="total-imagenes">0</strong></div>
@@ -28,14 +28,16 @@
 
       <div class="acciones">
         <button id="btn-empezar">Empezar captura</button>
-        <button id="btn-detener" class="secundario">Detener captura</button>
-        <button id="btn-actualizar">Actualizar</button>
-        <button id="btn-exportar">Exportar TXT</button>
-        <button id="btn-limpiar" class="secundario">Limpiar</button>
+        <button id="btn-detener" class="sec">Detener captura</button>
+        <button id="btn-descargar">Descargar todo</button>
+        <button id="btn-descargar-img" class="sec">Descargar solo imagenes</button>
+        <button id="btn-descargar-vid" class="sec">Descargar solo videos</button>
+        <button id="btn-exportar" class="sec">Exportar TXT</button>
+        <button id="btn-limpiar" class="sec">Limpiar</button>
       </div>
 
       <p id="estado" class="estado"></p>
-      <p class="credito">Hecho por alkeys. Modificar libre, uso no comercial. Uso bajo tu responsabilidad.</p>
+      <p class="credito">Hecho por alkeys. Uso no comercial. Bajo tu responsabilidad.</p>
     </main>
     <script src="popup.js"></script>
   </body>

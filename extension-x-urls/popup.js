@@ -6,9 +6,83 @@ function q(id) {
 
 let capturaActiva = false;
 let intervaloRefresco = null;
+let minVideoKB = 300;
 
 function setEstado(msg) {
   q("estado").textContent = msg;
+}
+
+function cargarConfig() {
+  chrome.storage.local.get(["x_extractor_min_video_kb"], (data) => {
+    const valor = Number(data.x_extractor_min_video_kb);
+    minVideoKB = Number.isFinite(valor) && valor >= 0 ? valor : 300;
+    q("sel-min-video-kb").value = String(minVideoKB);
+  });
+}
+
+function guardarConfigDesdeUI() {
+  const valor = Number(q("sel-min-video-kb").value);
+  minVideoKB = Number.isFinite(valor) && valor >= 0 ? valor : 300;
+  chrome.storage.local.set({ x_extractor_min_video_kb: minVideoKB });
+}
+
+function parseEnteroSeguro(v) {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+async function obtenerTamanoVideo(url) {
+  try {
+    const head = await fetch(url, { method: "HEAD" });
+    if (head.ok) {
+      const cl = parseEnteroSeguro(head.headers.get("content-length"));
+      if (cl !== null) {
+        return cl;
+      }
+    }
+  } catch {
+    // fallback
+  }
+
+  try {
+    const r = await fetch(url, { method: "GET", headers: { Range: "bytes=0-0" } });
+    if (r.ok || r.status === 206) {
+      const cr = r.headers.get("content-range") || "";
+      const m = cr.match(/\/(\d+)$/);
+      if (m) {
+        return parseEnteroSeguro(m[1]);
+      }
+      const cl = parseEnteroSeguro(r.headers.get("content-length"));
+      if (cl !== null) {
+        return cl;
+      }
+    }
+  } catch {
+    // sin tamaño
+  }
+
+  return null;
+}
+
+async function filtrarVideosPorTamano(videos) {
+  if (!minVideoKB || minVideoKB <= 0) {
+    return { videosFiltrados: videos, omitidos: 0 };
+  }
+
+  const minBytes = minVideoKB * 1024;
+  const salida = [];
+  let omitidos = 0;
+
+  for (const v of videos) {
+    const bytes = await obtenerTamanoVideo(v);
+    if (bytes !== null && bytes < minBytes) {
+      omitidos += 1;
+      continue;
+    }
+    salida.push(v);
+  }
+
+  return { videosFiltrados: salida, omitidos };
 }
 
 function actualizarBotones() {
@@ -125,9 +199,9 @@ function detenerCaptura() {
   });
 }
 
-function exportar() {
+async function exportar() {
   conPestanaActiva((tabId) => {
-    chrome.tabs.sendMessage(tabId, { tipo: "obtener" }, (res) => {
+    chrome.tabs.sendMessage(tabId, { tipo: "obtener" }, async (res) => {
       const err = chrome.runtime.lastError;
       if (err) {
         setEstado("No hay datos. Abre x.com y recarga.");
@@ -136,17 +210,18 @@ function exportar() {
 
       const imagenes = (res && res.imagenes) || [];
       const videos = (res && res.videos) || [];
+      const { videosFiltrados, omitidos } = await filtrarVideosPorTamano(videos);
 
-      if (!imagenes.length && !videos.length) {
+      if (!imagenes.length && !videosFiltrados.length) {
         setEstado("Sin URLs para exportar.");
         return;
       }
 
       const fecha = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
       const nombre = `x_media_urls_${fecha}.txt`;
-      const txt = aTxt(imagenes, videos);
+      const txt = aTxt(imagenes, videosFiltrados);
       descargarTxt(nombre, txt);
-      setEstado("Exportado: " + nombre);
+      setEstado(`Exportado: ${nombre} | Omitidos<${minVideoKB}KB: ${omitidos}`);
     });
   });
 }
@@ -171,7 +246,9 @@ q("btn-exportar").addEventListener("click", exportar);
 q("btn-limpiar").addEventListener("click", limpiar);
 q("btn-empezar").addEventListener("click", empezarCaptura);
 q("btn-detener").addEventListener("click", detenerCaptura);
+q("sel-min-video-kb").addEventListener("change", guardarConfigDesdeUI);
 
+cargarConfig();
 actualizarBotones();
 actualizarVista();
 iniciarAutoRefresco();

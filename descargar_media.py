@@ -39,6 +39,7 @@ HEADERS = {
 TIMEOUT = 30          # segundos por descarga
 REINTENTOS = 3        # reintentos automáticos
 PAUSA_ERROR = 2       # segundos de espera tras error
+MIN_VIDEO_BYTES = 300 * 1024  # 300 KB: descartar videos demasiado pequeños
 
 # ─── FUNCIONES ────────────────────────────────────────────────────────────────
 
@@ -158,6 +159,15 @@ def descargar_uno(args):
                 continue
             resp.raise_for_status()
 
+            es_video = detectar_tipo(candidato) == "video"
+            content_length = resp.headers.get("content-length")
+            if es_video and content_length:
+                try:
+                    if int(content_length) < MIN_VIDEO_BYTES:
+                        continue
+                except ValueError:
+                    pass
+
             # Escribir en disco
             with open(destino, "wb") as f:
                 for chunk in resp.iter_content(chunk_size=8192):
@@ -165,6 +175,10 @@ def descargar_uno(args):
                         f.write(chunk)
 
             tamaño = destino.stat().st_size
+            if es_video and tamaño < MIN_VIDEO_BYTES:
+                destino.unlink(missing_ok=True)
+                continue
+
             tamaño_str = f"{tamaño / 1024:.1f} KB" if tamaño < 1_048_576 else f"{tamaño / 1_048_576:.1f} MB"
             return (True, candidato, f"✓  {nombre} ({tamaño_str})")
 
@@ -172,6 +186,8 @@ def descargar_uno(args):
             destino.unlink()
 
         if ultima_respuesta is not None:
+            if detectar_tipo(url) == "video":
+                return (False, url, f"✗  Video omitido (<300KB) o HTTP {ultima_respuesta.status_code}: {nombre}")
             return (False, url, f"✗  HTTP {ultima_respuesta.status_code}: {nombre}")
 
         return (False, url, f"✗  Error: no se pudo resolver {nombre}")

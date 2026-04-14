@@ -1,19 +1,23 @@
 {
   "manifest_version": 3,
-  "name": "X Media URL Extractor",
+  "name": "ext-x-v2",
   "version": "0.1.0",
-  "description": "Extrae URLs de imagenes y videos desde X/Twitter y exporta a TXT.",
+  "description": "Captura y descarga contenido media de X/Twitter en un click.",
   "icons": {
     "16": "icon.svg",
     "48": "icon.svg",
     "128": "icon.svg"
   },
-  "permissions": ["storage", "downloads"],
+  "permissions": ["storage", "downloads", "tabs"],
   "host_permissions": [
     "https://x.com/*",
     "https://twitter.com/*",
-    "https://video.twimg.com/*"
+    "https://video.twimg.com/*",
+    "https://pbs.twimg.com/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
@@ -28,13 +32,13 @@
     }
   ],
   "action": {
-    "default_title": "X Media URL Extractor",
+    "default_title": "ext-x-v2",
     "default_popup": "popup.html",
     "default_icon": "icon.svg"
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "x-media-url-extractor@example.local"
+      "id": "ext-x-v2@alkeys.local"
     }
   }
 }

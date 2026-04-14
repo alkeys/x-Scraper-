@@ -1,15 +1,13 @@
 (() => {
-  if (window.__xExtractorIniciado) {
+  if (window.__extXV2Iniciado) {
     return;
   }
-  window.__xExtractorIniciado = true;
-
-  // Credito: alkeys. Proyecto hobby, uso bajo tu responsabilidad.
+  window.__extXV2Iniciado = true;
 
   const CLAVES = {
-    imagenes: "x_extractor_imagenes",
-    videos: "x_extractor_videos",
-    activo: "x_extractor_activo"
+    imagenes: "ext_x_v2_imagenes",
+    videos: "ext_x_v2_videos",
+    activo: "ext_x_v2_activo"
   };
 
   const PREFIJO_IMAGEN = "https://pbs.twimg.com/media/";
@@ -20,16 +18,21 @@
   const videoPorClave = new Map();
   let activo = false;
 
-  function normalizarUrl(url) {
+  function normalizar(url) {
     try {
       const u = new URL(url);
+      if (u.hostname === "video.twimg.com") {
+        return `${u.origin}${u.pathname}`;
+      }
+
       if (u.hostname === "pbs.twimg.com" && u.pathname.startsWith("/media/")) {
-        const format = u.searchParams.get("format");
-        const name = u.searchParams.get("name");
-        if (format) {
-          return `${u.origin}${u.pathname}?format=${format}&name=${name || "orig"}`;
+        const formato = u.searchParams.get("format");
+        const name = u.searchParams.get("name") || "orig";
+        if (formato) {
+          return `${u.origin}${u.pathname}?format=${formato}&name=${name}`;
         }
       }
+
       return `${u.origin}${u.pathname}`;
     } catch {
       return url;
@@ -76,7 +79,7 @@
   function enviarControlPagina() {
     window.postMessage(
       {
-        fuente: "x-extractor-control",
+        fuente: "ext-x-v2-control",
         tipo: "estado",
         activo
       },
@@ -90,12 +93,12 @@
     }
 
     if (url.startsWith(PREFIJO_IMAGEN)) {
-      imagenes.add(normalizarUrl(url));
+      imagenes.add(normalizar(url));
       return;
     }
 
     if (url.startsWith(PREFIJO_VIDEO)) {
-      const normalizada = normalizarUrl(url);
+      const normalizada = normalizar(url);
       const clave = claveVideo(normalizada);
       const anterior = videoPorClave.get(clave);
       if (!anterior || puntajeVideo(normalizada) >= puntajeVideo(anterior)) {
@@ -123,7 +126,7 @@
       }
 
       const data = event.data;
-      if (!data || data.fuente !== "x-extractor") {
+      if (!data || data.fuente !== "ext-x-v2") {
         return;
       }
 
@@ -132,11 +135,7 @@
         return;
       }
 
-      if (data.tipo !== "url") {
-        return;
-      }
-
-      if (!activo) {
+      if (data.tipo !== "url" || !activo) {
         return;
       }
 
