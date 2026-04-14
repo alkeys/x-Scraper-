@@ -41,3 +41,9 @@ Si no haces scroll, no existe data para capturar.
 
 Este proyecto usa licencia no comercial con atribucion obligatoria. Puedes
 modificarlo y redistribuirlo, pero debes conservar credito al autor.
+
+## Aviso
+
+Este proyecto fue hecho como hobby. El uso, abuso o consecuencias derivadas
+del uso quedan bajo tu responsabilidad. El autor no se hace responsable por
+daños, reclamos o problemas legales.

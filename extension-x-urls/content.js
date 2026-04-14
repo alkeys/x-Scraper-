@@ -4,7 +4,7 @@
   }
   window.__xExtractorIniciado = true;
 
-  // Credito: alkeys
+  // Credito: alkeys. Proyecto hobby, uso bajo tu responsabilidad.
 
   const CLAVES = {
     imagenes: "x_extractor_imagenes",
