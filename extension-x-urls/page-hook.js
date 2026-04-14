@@ -23,22 +23,80 @@
     );
   }
 
-  function agregarUrl(url) {
-    if (typeof url !== "string") {
+  function publicarReady() {
+    window.postMessage(
+      {
+        fuente: "x-extractor",
+        tipo: "ready"
+      },
+      "*"
+    );
+  }
+
+  function normalizarImagen(url) {
+    if (typeof url !== "string" || !url.startsWith(PREFIJO_IMAGEN)) {
+      return null;
+    }
+
+    const sinQuery = url.split("?")[0];
+    const match = sinQuery.match(/^(https:\/\/pbs\.twimg\.com\/media\/[^.]+)\.(\w+)$/);
+    if (!match) {
+      return `${sinQuery}?format=jpg&name=orig`;
+    }
+
+    return `${match[1]}?format=${match[2]}&name=orig`;
+  }
+
+  function obtenerMejorVarianteVideo(media) {
+    const variantes = (media && media.video_info && media.video_info.variants) || [];
+    let mejor = null;
+
+    for (const variante of variantes) {
+      if (!variante || typeof variante.url !== "string") {
+        continue;
+      }
+
+      const url = variante.url;
+      if (!url.startsWith(PREFIJO_VIDEO)) {
+        continue;
+      }
+
+      const contentType = (variante.content_type || variante.contentType || "").toLowerCase();
+      if (!contentType.includes("mp4") && !url.toLowerCase().endsWith(".mp4")) {
+        continue;
+      }
+
+      const bitrate = typeof variante.bitrate === "number" ? variante.bitrate : 0;
+      if (!mejor || bitrate > mejor.bitrate) {
+        mejor = { url, bitrate };
+      }
+    }
+
+    return mejor ? mejor.url : null;
+  }
+
+  function procesarMedia(media) {
+    if (!esObj(media) || typeof media.type !== "string") {
       return;
     }
 
-    if (url.startsWith(PREFIJO_IMAGEN) || url.startsWith(PREFIJO_VIDEO)) {
-      publicarUrl(url);
+    if (media.type === "photo") {
+      const url = normalizarImagen(media.media_url_https || media.url || "");
+      if (url) {
+        publicarUrl(url);
+      }
+      return;
+    }
+
+    if (media.type === "video" || media.type === "animated_gif") {
+      const url = obtenerMejorVarianteVideo(media);
+      if (url) {
+        publicarUrl(url);
+      }
     }
   }
 
   function explorarJson(valor) {
-    if (typeof valor === "string") {
-      agregarUrl(valor);
-      return;
-    }
-
     if (Array.isArray(valor)) {
       for (const item of valor) {
         explorarJson(item);
@@ -50,8 +108,34 @@
       return;
     }
 
+    if (typeof valor.media_url_https === "string" && typeof valor.type === "string") {
+      procesarMedia(valor);
+    }
+
+    if (Array.isArray(valor.media)) {
+      for (const media of valor.media) {
+        procesarMedia(media);
+      }
+    }
+
     for (const key of Object.keys(valor)) {
       explorarJson(valor[key]);
+    }
+  }
+
+  function extraerUrlsDesdeTexto(texto) {
+    const regexImg = /https:\/\/pbs\.twimg\.com\/media\/[A-Za-z0-9_-]+(?:\.[A-Za-z0-9]+)?(?:\?[^"'\s\\]+)?/g;
+    const regexVid = /https:\/\/video\.twimg\.com\/[A-Za-z0-9_\-\/.]+\.mp4(?:\?[^"'\s\\]+)?/g;
+
+    for (const url of texto.match(regexImg) || []) {
+      const normalizada = normalizarImagen(url);
+      if (normalizada) {
+        publicarUrl(normalizada);
+      }
+    }
+
+    for (const url of texto.match(regexVid) || []) {
+      publicarUrl(url);
     }
   }
 
@@ -63,8 +147,9 @@
     try {
       const json = JSON.parse(texto);
       explorarJson(json);
+      extraerUrlsDesdeTexto(texto);
     } catch {
-      // Ignorar respuestas no JSON
+      extraerUrlsDesdeTexto(texto);
     }
   }
 
@@ -152,4 +237,5 @@
   escucharControl();
   parchearFetch();
   parchearXHR();
+  publicarReady();
 })();

@@ -77,7 +77,16 @@
       }
 
       const data = event.data;
-      if (!data || data.fuente !== "x-extractor" || data.tipo !== "url") {
+      if (!data || data.fuente !== "x-extractor") {
+        return;
+      }
+
+      if (data.tipo === "ready") {
+        enviarControlPagina();
+        return;
+      }
+
+      if (data.tipo !== "url") {
         return;
       }
 

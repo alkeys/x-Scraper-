@@ -65,6 +65,48 @@ def detectar_tipo(url: str) -> str:
     return "imagen"
 
 
+def generar_variantes_descarga(url: str) -> list[str]:
+    """Genera variantes válidas para URLs de X/Twitter, sobre todo pbs.twimg.com/media."""
+    parsed = urlparse(url)
+    host = parsed.netloc.lower()
+    path = parsed.path
+    base = f"{parsed.scheme}://{parsed.netloc}{path}"
+    params = parse_qs(parsed.query)
+
+    if host != "pbs.twimg.com" or not path.startswith("/media/"):
+        return [url]
+
+    variantes = []
+
+    if "format" in params:
+      
+        format_valor = params["format"][0]
+        variantes.append(f"{base}?format={format_valor}&name=orig")
+
+    match = path.rsplit(".", 1)
+    if len(match) == 2:
+        ext = match[1].lower()
+        if ext in {"jpg", "jpeg", "png", "gif", "webp"}:
+            variantes.append(f"{base}?format={ext}&name=orig")
+
+    variantes.extend(
+        [
+            f"{base}?format=jpg&name=orig",
+            f"{base}?format=png&name=orig",
+            f"{base}?format=webp&name=orig",
+            f"{base}?name=orig",
+            base,
+        ]
+    )
+
+    # Quitar duplicados manteniendo orden
+    limpias = []
+    for variante in variantes:
+        if variante not in limpias:
+            limpias.append(variante)
+    return limpias
+
+
 def generar_nombre(url: str, indice: int) -> str:
     """Genera un nombre de archivo limpio desde la URL."""
     parsed = urlparse(url)
@@ -108,18 +150,31 @@ def descargar_uno(args):
         return (True, url, f"⏭  Ya existe: {nombre}")
 
     try:
-        resp = sesion.get(url, timeout=TIMEOUT, stream=True)
-        resp.raise_for_status()
+        ultima_respuesta = None
+        for candidato in generar_variantes_descarga(url):
+            resp = sesion.get(candidato, timeout=TIMEOUT, stream=True)
+            ultima_respuesta = resp
+            if resp.status_code == 404:
+                continue
+            resp.raise_for_status()
 
-        # Escribir en disco
-        with open(destino, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
+            # Escribir en disco
+            with open(destino, "wb") as f:
+                for chunk in resp.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
 
-        tamaño = destino.stat().st_size
-        tamaño_str = f"{tamaño / 1024:.1f} KB" if tamaño < 1_048_576 else f"{tamaño / 1_048_576:.1f} MB"
-        return (True, url, f"✓  {nombre} ({tamaño_str})")
+            tamaño = destino.stat().st_size
+            tamaño_str = f"{tamaño / 1024:.1f} KB" if tamaño < 1_048_576 else f"{tamaño / 1_048_576:.1f} MB"
+            return (True, candidato, f"✓  {nombre} ({tamaño_str})")
+
+        if destino.exists():
+            destino.unlink()
+
+        if ultima_respuesta is not None:
+            return (False, url, f"✗  HTTP {ultima_respuesta.status_code}: {nombre}")
+
+        return (False, url, f"✗  Error: no se pudo resolver {nombre}")
 
     except requests.exceptions.HTTPError as e:
         time.sleep(PAUSA_ERROR)
