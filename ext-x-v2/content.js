@@ -17,6 +17,7 @@
   const videos = new Set();
   const videoPorClave = new Map();
   let activo = false;
+  let observadorDom = null;
 
   function normalizar(url) {
     try {
@@ -74,6 +75,111 @@
       [CLAVES.videos]: Array.from(videos),
       [CLAVES.activo]: activo
     });
+  }
+
+  function urlsDesdeTexto(texto) {
+    if (typeof texto !== "string" || !texto) {
+      return [];
+    }
+    const resultados = [];
+    const regex = /https:\/\/(?:pbs|video)\.twimg\.com\/[^\s"')]+/g;
+    for (const match of texto.match(regex) || []) {
+      resultados.push(match.trim());
+    }
+    return resultados;
+  }
+
+  function procesarNodoDom(nodo) {
+    if (!(nodo instanceof Element)) {
+      return;
+    }
+
+    const candidatos = [
+      nodo.getAttribute("src"),
+      nodo.getAttribute("href"),
+      nodo.getAttribute("poster"),
+      nodo.getAttribute("srcset"),
+      nodo.getAttribute("style")
+    ];
+    if ("currentSrc" in nodo && typeof nodo.currentSrc === "string") {
+      candidatos.push(nodo.currentSrc);
+    }
+
+    for (const valor of candidatos) {
+      if (!valor) {
+        continue;
+      }
+      for (const url of urlsDesdeTexto(valor)) {
+        agregarUrl(url);
+      }
+    }
+
+    for (const sub of nodo.querySelectorAll("img,video,source,a")) {
+      const valores = [
+        sub.getAttribute("src"),
+        sub.getAttribute("href"),
+        sub.getAttribute("poster"),
+        sub.getAttribute("srcset")
+      ];
+      if ("currentSrc" in sub && typeof sub.currentSrc === "string") {
+        valores.push(sub.currentSrc);
+      }
+      for (const valor of valores) {
+        if (!valor) {
+          continue;
+        }
+        for (const url of urlsDesdeTexto(valor)) {
+          agregarUrl(url);
+        }
+      }
+    }
+  }
+
+  function escaneoDomCompleto() {
+    const antesI = imagenes.size;
+    const antesV = videos.size;
+    for (const nodo of document.querySelectorAll("img,video,source,a")) {
+      procesarNodoDom(nodo);
+    }
+    if (imagenes.size !== antesI || videos.size !== antesV) {
+      guardarEstado();
+    }
+  }
+
+  function iniciarObservadorDom() {
+    if (observadorDom) {
+      return;
+    }
+    observadorDom = new MutationObserver((mutaciones) => {
+      const antesI = imagenes.size;
+      const antesV = videos.size;
+      for (const mut of mutaciones) {
+        if (mut.type === "attributes") {
+          procesarNodoDom(mut.target);
+        }
+        for (const nodo of mut.addedNodes) {
+          procesarNodoDom(nodo);
+        }
+      }
+      if (imagenes.size !== antesI || videos.size !== antesV) {
+        guardarEstado();
+      }
+    });
+
+    observadorDom.observe(document.documentElement || document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["src", "srcset", "poster", "href", "style"]
+    });
+  }
+
+  function detenerObservadorDom() {
+    if (!observadorDom) {
+      return;
+    }
+    observadorDom.disconnect();
+    observadorDom = null;
   }
 
   function enviarControlPagina() {
@@ -172,6 +278,8 @@
 
       if (msg.tipo === "empezar") {
         activo = true;
+        escaneoDomCompleto();
+        iniciarObservadorDom();
         guardarEstado();
         enviarControlPagina();
         sendResponse({ ok: true, activo });
@@ -179,6 +287,7 @@
 
       if (msg.tipo === "detener") {
         activo = false;
+        detenerObservadorDom();
         guardarEstado();
         enviarControlPagina();
         sendResponse({ ok: true, activo });
@@ -196,6 +305,12 @@
         videoPorClave.set(claveVideo(url), url);
       }
       activo = !!data[CLAVES.activo];
+      if (activo) {
+        escaneoDomCompleto();
+        iniciarObservadorDom();
+      } else {
+        detenerObservadorDom();
+      }
       enviarControlPagina();
     });
   }
