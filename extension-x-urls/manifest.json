@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "X Media URL Extractor",
+  "version": "0.1.0",
+  "description": "Extrae URLs de imagenes y videos desde X/Twitter y exporta a TXT.",
+  "icons": {
+    "16": "icon.svg",
+    "48": "icon.svg",
+    "128": "icon.svg"
+  },
+  "permissions": ["storage", "downloads"],
+  "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["page-hook.js"],
+      "matches": ["https://x.com/*", "https://twitter.com/*"]
+    }
+  ],
+  "action": {
+    "default_title": "X Media URL Extractor",
+    "default_popup": "popup.html",
+    "default_icon": "icon.svg"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "x-media-url-extractor@example.local"
+    }
+  }
+}

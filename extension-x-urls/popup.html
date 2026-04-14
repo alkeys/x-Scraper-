@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>X Media URL Extractor</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="contenedor">
+      <div class="logo" aria-hidden="true">A</div>
+      <h1>X Media URL Extractor</h1>
+      <p class="nota">Abre x.com, navega perfil, baja scroll. Extension captura URLs cargadas.</p>
+
+      <section class="tarjeta">
+        <div class="fila"><span>Imagenes</span><strong id="total-imagenes">0</strong></div>
+        <div class="fila"><span>Videos</span><strong id="total-videos">0</strong></div>
+      </section>
+
+      <div class="acciones">
+        <button id="btn-empezar">Empezar captura</button>
+        <button id="btn-detener" class="secundario">Detener captura</button>
+        <button id="btn-actualizar">Actualizar</button>
+        <button id="btn-exportar">Exportar TXT</button>
+        <button id="btn-limpiar" class="secundario">Limpiar</button>
+      </div>
+
+      <p id="estado" class="estado"></p>
+      <p class="credito">Hecho por alkeys. Modificar libre, uso no comercial.</p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

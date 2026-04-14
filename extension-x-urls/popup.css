@@ -1,0 +1,100 @@
+:root {
+  --fondo: #0f172a;
+  --panel: #111827;
+  --txt: #e5e7eb;
+  --muted: #9ca3af;
+  --primario: #22c55e;
+  --sec: #374151;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 320px;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  color: var(--txt);
+  background: radial-gradient(circle at top right, #1f2937, var(--fondo));
+}
+
+.contenedor {
+  padding: 12px;
+}
+
+.logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  margin-bottom: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  font-weight: 900;
+  color: #fff7ed;
+  background: linear-gradient(135deg, #1d4ed8, #f59e0b);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.nota {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tarjeta {
+  background: var(--panel);
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.fila {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+  font-size: 13px;
+}
+
+.acciones {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--primario);
+  color: #052e16;
+  font-weight: 700;
+}
+
+button.secundario {
+  background: var(--sec);
+  color: var(--txt);
+}
+
+.estado {
+  margin: 8px 0 0;
+  min-height: 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.credito {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: #cbd5e1;
+  opacity: 0.85;
+}
